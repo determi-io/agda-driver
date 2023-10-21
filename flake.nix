@@ -18,11 +18,13 @@
         # For `nix build` & `nix run`:
         defaultPackage = naersk'.buildPackage {
           src = ./.;
+          AGDA = "${pkgs.agda}/bin/agda";
         };
 
         # For `nix develop`:
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [ rustc cargo ];
+          AGDA = "${pkgs.agda}";
         };
       }
     );
