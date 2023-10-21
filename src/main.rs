@@ -11,12 +11,24 @@ fn main()
 
     match args.len()
     {
-        // 2 arguments
-        3 =>
+        // 1 arguments
+        2 =>
         {
             let path_in = &args[1];
-            let path_out = &args[2];
-            let result = copy_dir(path_in, path_out);
+            // let path_out = &args[2];
+            let path_out_maybe = std::env::var("out");
+
+            let path_out = match path_out_maybe
+            {
+                Ok(x) => x,
+                Err(e) =>
+                {
+                    eprintln!("err {e}");
+                    return;
+                }
+            };
+
+            let result = copy_dir(path_in, &path_out);
             match result
             {
                 Ok(()) => (),
@@ -51,5 +63,6 @@ fn copy_dir(from_path: &str, to_path: &str) -> Result<()>
 
     Ok(())
 }
+
 
 
