@@ -86,6 +86,7 @@ fn agda_build(agda: &str, root: &str) -> Result<()>
                 {
                     println!("running agda!");
                     let status = Command::new(agda)
+                        .arg("--transliterate")
                         .arg(entry.path().to_str().unwrap())
                         .current_dir(root)
                         .status()
