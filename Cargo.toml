@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 fs_extra = "1.3.0"
 anyhow = "*"
+walkdir = "2.4.0"

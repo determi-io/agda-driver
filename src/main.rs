@@ -1,6 +1,11 @@
+use std::ffi::OsStr;
+use std::path::Path;
+use std::process::Command;
+
 use fs_extra::dir::CopyOptions;
 use fs_extra::copy_items;
 use anyhow::Result;
+use walkdir::WalkDir;
 
 // usage: agda-driver path-in path-out
 fn main()
@@ -31,7 +36,7 @@ fn main()
             let result = copy_dir(path_in, &path_out);
             match result
             {
-                Ok(()) => (),
+                Ok(()) => agda_build(agda, &path_in),
                 Err(e) => eprintln!("Couldnt copy. Error: {e}")
             }
         }
@@ -49,19 +54,45 @@ fn main()
 
 fn copy_dir(from_path: &str, to_path: &str) -> Result<()>
 {
-    // get all items in existing path
-    // let from_paths = fs::read_dir(path_in).unwrap();
-
-
     //Initialize default values for CopyOptions
     let options = CopyOptions::new()
         .copy_inside(true);
-        // .content_only(true);
 
     // copy all these items with `fs_extra` crate
     copy_items(&[from_path], to_path, &options)?;
 
     Ok(())
+}
+
+fn agda_build(agda: &str, root: &str)
+{
+    for entry in WalkDir::new(root)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|e| !e.file_type().is_dir())
+    {
+        let x = entry.file_name();
+        // let x = x.to_string_lossy();
+        let a = Path::new(&x).extension().and_then(OsStr::to_str);
+
+        if let Some(a) = a
+        {
+            println!("got file {a}");
+
+            if let Some(x) = entry.path().extension()
+            {
+                if x.to_str().unwrap_or_default() == "agda"
+                {
+                    println!("running agda!");
+                    Command::new(agda)
+                        .arg(entry.path().to_str().unwrap())
+                        .status()
+                        .expect("failed to run agda!");
+                }
+            }
+        }
+
+    }
 }
 
 
