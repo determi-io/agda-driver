@@ -4,7 +4,7 @@ use std::process::Command;
 
 use fs_extra::dir::CopyOptions;
 use fs_extra::copy_items;
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use walkdir::WalkDir;
 
 // usage: agda-driver path-in path-out
@@ -33,10 +33,11 @@ fn main()
                 }
             };
 
-            let result = copy_dir(path_in, &path_out);
+            let result = copy_dir(path_in, &path_out)
+                .and_then(|_| agda_build(agda, &path_in));
             match result
             {
-                Ok(()) => agda_build(agda, &path_in),
+                Ok(()) => (),
                 Err(e) => eprintln!("Couldnt copy. Error: {e}")
             }
         }
@@ -64,7 +65,7 @@ fn copy_dir(from_path: &str, to_path: &str) -> Result<()>
     Ok(())
 }
 
-fn agda_build(agda: &str, root: &str)
+fn agda_build(agda: &str, root: &str) -> Result<()>
 {
     for entry in WalkDir::new(root)
         .into_iter()
@@ -84,15 +85,21 @@ fn agda_build(agda: &str, root: &str)
                 if x.to_str().unwrap_or_default() == "agda"
                 {
                     println!("running agda!");
-                    Command::new(agda)
+                    let status = Command::new(agda)
                         .arg(entry.path().to_str().unwrap())
+                        .current_dir(root)
                         .status()
                         .expect("failed to run agda!");
+                    if !status.success()
+                    {
+                        return Err(anyhow!("typechecking failed."))
+                    }
                 }
             }
         }
 
     }
+    Ok(())
 }
 
 
