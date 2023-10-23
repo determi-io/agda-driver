@@ -34,7 +34,7 @@ fn main()
             };
 
             let result = copy_dir(path_in, &path_out)
-                .and_then(|_| agda_build(agda, &path_in));
+                .and_then(|_| agda_build(agda, &path_out));
             match result
             {
                 Ok(()) => (),
