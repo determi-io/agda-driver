@@ -1,4 +1,4 @@
-use std::ffi::OsStr;
+use std::{ffi::OsStr, process::exit};
 use std::path::Path;
 use std::process::Command;
 
@@ -54,7 +54,11 @@ fn main()
             match result
             {
                 Ok(()) => (),
-                Err(e) => eprintln!("Couldnt copy. Error: {e}")
+                Err(e) =>
+                {
+                    eprintln!("Couldnt copy. Error: {e}");
+                    exit(-1);
+                }
             }
         }
 
