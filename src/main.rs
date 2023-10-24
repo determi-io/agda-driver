@@ -10,10 +10,26 @@ use walkdir::WalkDir;
 // usage: agda-driver path-in path-out
 fn main()
 {
+
+
+    /////////////////////////////////////////////
+    // parse environment vars
     let agda = std::env!("AGDA");
+    let agda_includes = match std::env::var("AGDA_INCLUDES")
+    {
+        Ok(agda_includes) => {
+            agda_includes
+                .split(":")
+                .map(|s| String::from(s))
+                .collect()
+        },
+        Err(_) => Vec::new(),
+    };
 
+
+    /////////////////////////////////////////////
+    // match args
     let args: Vec<String> = std::env::args().collect();
-
     match args.len()
     {
         // 1 arguments
@@ -34,7 +50,7 @@ fn main()
             };
 
             let result = copy_dir(path_in, &path_out)
-                .and_then(|_| agda_build(agda, &path_out));
+                .and_then(|_| agda_build(agda, &path_out, agda_includes));
             match result
             {
                 Ok(()) => (),
@@ -65,7 +81,7 @@ fn copy_dir(from_path: &str, to_path: &str) -> Result<()>
     Ok(())
 }
 
-fn agda_build(agda: &str, root: &str) -> Result<()>
+fn agda_build(agda: &str, root: &str, includes: Vec<String>) -> Result<()>
 {
     for entry in WalkDir::new(root)
         .into_iter()
@@ -85,12 +101,24 @@ fn agda_build(agda: &str, root: &str) -> Result<()>
                 if x.to_str().unwrap_or_default() == "agda"
                 {
                     println!("running agda!");
-                    let status = Command::new(agda)
-                        .arg("--transliterate")
+
+                    // prepare command to run
+                    let mut cmd = Command::new(agda);
+
+                    // add all includes
+                    for include in &includes
+                    {
+                        cmd.arg("-i").arg(include);
+                    }
+
+                    // add all other arguments and run
+                    let status = cmd.arg("--transliterate")
                         .arg(entry.path().to_str().unwrap())
                         .current_dir(root)
                         .status()
                         .expect("failed to run agda!");
+
+                    // check result
                     if !status.success()
                     {
                         return Err(anyhow!("typechecking failed."))
