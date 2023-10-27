@@ -3,9 +3,20 @@
     flake-utils.url = "github:numtide/flake-utils";
     naersk.url = "github:nix-community/naersk";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
+    # agda
+    # NOTE: We cannot use the nixpkgs.agda because it has
+    # ghc as runtime dependency, making the resulting closure
+    # very large!
+    agda =
+    {
+      type = "github";
+      owner = "determi-io";
+      repo = "agda-only-agda";
+    };
   };
 
-  outputs = { self, flake-utils, naersk, nixpkgs }:
+  outputs = { self, flake-utils, naersk, nixpkgs, agda }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = (import nixpkgs) {
@@ -18,7 +29,7 @@
         # For `nix build` & `nix run`:
         defaultPackage = naersk'.buildPackage {
           src = ./.;
-          AGDA = "${pkgs.agda}/bin/agda";
+          AGDA = "${agda.outputs.packages.x86_64-linux.default}/bin/agda";
         };
 
         # For `nix develop`:
